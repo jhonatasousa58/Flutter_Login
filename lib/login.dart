@@ -42,7 +42,7 @@ class DadosLogin {
   }
 }
 
-List<User> convertUser(List<DadosLogin> list){
+User convertUser(List<DadosLogin> list){
   List<User> userL = new List<User>();
   User user;
   for (DadosLogin i in list) {
@@ -53,7 +53,7 @@ List<User> convertUser(List<DadosLogin> list){
     user.setUser(i.id, i.nome, i.emaillog, i.cpf, i.data_nascimento, i.data_criacao_conta, );
     userL.add(user);
   }
-  return userL;
+  return user;
 }
 
 class _LoginState extends State<pageLogin> {
@@ -74,17 +74,21 @@ class _LoginState extends State<pageLogin> {
   }
 
   User user;
-  Future<List<User>> fetchDados() async{
+  Future<User> fetchDados() async{
     final response = await http.get("http://10.0.2.2:2345?method=get&db=bd&operation=2&email=$email&senha=$senha", headers: {"Accept": "application/json"});
     if (response.statusCode == 200) {
       // If server returns an OK response, parse the JSON.
       var j = json.decode(response.body);
-      List<User>  list = new   List<User>();
+      User user;
       List<DadosLogin> users = new List<DadosLogin>.from(j.map((i)=> DadosLogin.fromJson(i)).toList());
-      list = convertUser(users);
+      print("tamaanho lista");
+      print(users.length);
+      user = convertUser(users);
       print("TAMANHO LISTAAAAAAAAAA");
-      print(list.length);
-      return list;
+      print(user.nome);
+//      print(list.length);
+//      return list;
+    return user;
     } else {
       // If that response was not OK, throw an error.
       throw Exception('Failed to load post');
