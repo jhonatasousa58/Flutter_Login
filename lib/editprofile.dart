@@ -92,9 +92,11 @@ class MapScreenState extends State<EditProfilePage>
   editProfile() async{
     final res = await http.get("http://10.0.2.2:2345?method=patch&db=bd&operation=1&tabela=usuario&id=$idUser&nome='$nomeUser'&email='$emailUser'&data_nascimento='$data_nascimentoUser'&cpf='$cpfUser'");
     if(res.statusCode == 200){
-      _showDialog(true);
+      //_showDialog(true);
       savePreferences(1, idUser, nomeUser, emailUser, cpfUser, data_nascimentoUser);
-      //Navigator.of(context).pop();
+      setState(() {
+        Navigator.pop(context);
+      });
     }else{
       _showDialog(false);
     }
