@@ -88,6 +88,29 @@ class _LoginState extends State<pageLogin> {
     }
   }
 
+  void _showDialog() {
+    // flutter defined function
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("Erro ao realizar o login"),
+          content: new Text("Email e/ou senha incorretos."),
+          actions: <Widget>[
+            // usually buttons at the bottom of the dialog
+            new FlatButton(
+              child: new Text("Fechar"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   loginH() async{
     User novo = await fetchDados();
     int value = 1;
@@ -97,7 +120,7 @@ class _LoginState extends State<pageLogin> {
         savePreferences(value, novo?.id, novo?.nome, novo?.emaillog, novo?.cpf, novo?.data_nascimento);
       });
     }else{
-      print("NAO LOGADAOOOO");
+      _showDialog();
       setState(() {
         _loginStatus = LoginStatus.naoLogado;
       });

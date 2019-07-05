@@ -17,6 +17,13 @@ class MapScreenState extends State<EditProfilePage>
   bool _status = false;
   final FocusNode myFocusNode = FocusNode();
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getPreferencesUser();
+  }
+
   String idUser, nomeUser, emailUser, cpfUser, data_nascimentoUser;
   getPreferencesUser() async{
     SharedPreferences prefUser = await SharedPreferences.getInstance();
@@ -30,12 +37,81 @@ class MapScreenState extends State<EditProfilePage>
   }
 
   TextEditingController cNome, cEmail, cCPF, cDataN;
+  final _key = new GlobalKey<FormState>();
+  checkEd(){
+    final form = _key.currentState;
+    form.save();
+    editProfile();
+  }
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    getPreferencesUser();
+  void _showDialog(bool status) {
+    // flutter defined function
+    if(status == true) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+            title: new Text("Atualização Realizada com Sucesso"),
+            content: new Text("Os dados foram Atualizados"),
+            actions: <Widget>[
+              // usually buttons at the bottom of the dialog
+              new FlatButton(
+                child: new Text("Fechar"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }else{
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          // return object of type Dialog
+          return AlertDialog(
+            title: new Text("Atualização Falhou"),
+            content: new Text("Os dados não foram Atualizados"),
+            actions: <Widget>[
+              // usually buttons at the bottom of the dialog
+              new FlatButton(
+                child: new Text("Fechar"),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  editProfile() async{
+    final res = await http.get("http://10.0.2.2:2345?method=patch&db=bd&operation=1&tabela=usuario&id=$idUser&nome='$nomeUser'&email='$emailUser'&data_nascimento='$data_nascimentoUser'&cpf='$cpfUser'");
+    if(res.statusCode == 200){
+      _showDialog(true);
+      savePreferences(1, idUser, nomeUser, emailUser, cpfUser, data_nascimentoUser);
+      //Navigator.of(context).pop();
+    }else{
+      _showDialog(false);
+    }
+  }
+
+  savePreferences(int value, String id, String nome, String emailuser, String cpf, String data_nascimento) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      prefs.setInt("statusLogin", value);
+      prefs.setString("idUser", id);
+      prefs.setString("nomeUser", nome);
+      prefs.setString("emailUser", emailuser);
+      prefs.setString("cpfUser", cpf);
+      prefs.setString("data_nascimentoUser", data_nascimento);
+      // ignore: deprecated_member_use
+      prefs.commit();
+    });
   }
 
   @override
@@ -45,7 +121,9 @@ class MapScreenState extends State<EditProfilePage>
     cCPF = new TextEditingController(text: cpfUser);
     cDataN = new TextEditingController(text: data_nascimentoUser);
     return new Scaffold(
-        body: new Container(
+        body: new Form(
+          key: _key,
+          child: Container(
           color: Colors.white,
           child: new ListView(
             children: <Widget>[
@@ -280,6 +358,7 @@ class MapScreenState extends State<EditProfilePage>
               ),
             ],
           ),
+          ),
         ));
   }
 
@@ -306,10 +385,7 @@ class MapScreenState extends State<EditProfilePage>
                     textColor: Colors.white,
                     color: Color(0xFF19B37A),
                     onPressed: () {
-                      setState(() {
-                        _status = true;
-                        FocusScope.of(context).requestFocus(new FocusNode());
-                      });
+                      checkEd();
                     },
                     shape: new RoundedRectangleBorder(
                         borderRadius: new BorderRadius.circular(20.0)),
