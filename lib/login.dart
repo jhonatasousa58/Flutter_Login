@@ -1,12 +1,13 @@
-
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import './signup.dart';
 import './user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import './profile.dart';
 
 class pageLogin extends StatefulWidget{
   @override
@@ -32,28 +33,25 @@ class DadosLogin {
 
   factory DadosLogin.fromJson(Map<String, dynamic> json) {
     return new DadosLogin(
-      id: json['id'],
-      nome: json['nome'],
-      emaillog: json['email'],
-      cpf: json['cpf'],
-      data_nascimento: json['data_nascimento'],
-      data_criacao_conta: json['data_criacao_conta']
+        id: json['id'],
+        nome: json['nome'],
+        emaillog: json['email'],
+        cpf: json['cpf'],
+        data_nascimento: json['data_nascimento'],
+        data_criacao_conta: json['data_criacao_conta']
     );
   }
 }
 
-List<User> convertUser(List<DadosLogin> list){
+User convertUser(List<DadosLogin> list){
   List<User> userL = new List<User>();
   User user;
   for (DadosLogin i in list) {
     user =  new User();
-    print(i.nome);
-    print(i.id);
-    print(i.emaillog);
     user.setUser(i.id, i.nome, i.emaillog, i.cpf, i.data_nascimento, i.data_criacao_conta, );
     userL.add(user);
   }
-  return userL;
+  return user;
 }
 
 class _LoginState extends State<pageLogin> {
@@ -73,18 +71,17 @@ class _LoginState extends State<pageLogin> {
     }
   }
 
-  User user;
-  Future<List<User>> fetchDados() async{
+  Future<User> fetchDados() async{
     final response = await http.get("http://10.0.2.2:2345?method=get&db=bd&operation=2&email=$email&senha=$senha", headers: {"Accept": "application/json"});
     if (response.statusCode == 200) {
       // If server returns an OK response, parse the JSON.
       var j = json.decode(response.body);
-      List<User>  list = new   List<User>();
+      User user;
       List<DadosLogin> users = new List<DadosLogin>.from(j.map((i)=> DadosLogin.fromJson(i)).toList());
-      list = convertUser(users);
-      print("TAMANHO LISTAAAAAAAAAA");
-      print(list.length);
-      return list;
+      user = convertUser(users);
+//      print(list.length);
+//      return list;
+      return user;
     } else {
       // If that response was not OK, throw an error.
       throw Exception('Failed to load post');
@@ -92,25 +89,30 @@ class _LoginState extends State<pageLogin> {
   }
 
   loginH() async{
-    //final res = await http.get("http://10.0.2.2:2345?method=get&db=bd&operation=2&email=$email&senha=$senha", headers: {"Accept": "application/json"});
-    //if(res.statusCode == 200){
-      //final data = jsonDecode(res.body);
-      int id = 1;
-      if(id != null){
-        setState(() {
-          _loginStatus = LoginStatus.naoLogado;
-          //savePreferences(id);
-        });
-      }else{
-        print("erro");
-      }
-    //}
+    User novo = await fetchDados();
+    int value = 1;
+    if(novo?.emaillog == email){
+      setState(() {
+        _loginStatus = LoginStatus.Logado;
+        savePreferences(value, novo?.id, novo?.nome, novo?.emaillog, novo?.cpf, novo?.data_nascimento);
+      });
+    }else{
+      print("NAO LOGADAOOOO");
+      setState(() {
+        _loginStatus = LoginStatus.naoLogado;
+      });
+    }
   }
-/*
-  savePreferences(int id) async{
+
+  savePreferences(int value, String id, String nome, String emailuser, String cpf, String data_nascimento) async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      prefs.setInt("id", id);
+      prefs.setInt("statusLogin", value);
+      prefs.setString("idUser", id);
+      prefs.setString("nomeUser", nome);
+      prefs.setString("emailUser", emailuser);
+      prefs.setString("cpfUser", cpf);
+      prefs.setString("data_nascimentoUser", data_nascimento);
       // ignore: deprecated_member_use
       prefs.commit();
     });
@@ -120,8 +122,17 @@ class _LoginState extends State<pageLogin> {
   getPreferences() async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      value = prefs.getInt("id");
+      value = prefs.getInt("statusLogin");
       _loginStatus = value == 1 ? LoginStatus.Logado : LoginStatus.naoLogado;
+    });
+  }
+
+  Logout() async{
+    SharedPreferences prefes = await SharedPreferences.getInstance();
+    setState(() {
+      prefes.setInt("statusLogin", null);
+      prefes.commit();
+      _loginStatus = LoginStatus.naoLogado;
     });
   }
 
@@ -130,7 +141,7 @@ class _LoginState extends State<pageLogin> {
     super.initState();
     getPreferences();
   }
-*/
+
   Widget build(BuildContext context) {
     switch(_loginStatus){
       case LoginStatus.naoLogado:
@@ -279,7 +290,7 @@ class _LoginState extends State<pageLogin> {
         );
         break;
       case LoginStatus.Logado:
-        return MainMenu();
+        return ProfilePage(Logout);
         break;
     }
   }
